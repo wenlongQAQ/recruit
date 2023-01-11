@@ -1,0 +1,17 @@
+#server:
+#  port: 8080
+#spring:
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/work?serverTimezone=UTC
+#    username: root
+#    password: Liwenlong.0328
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:mysql://180.76.113.115:3306/work?serverTimezone=UTC
+    username: root
+    password: Liwenlong.0328
+    driver-class-name: com.mysql.cj.jdbc.Driver

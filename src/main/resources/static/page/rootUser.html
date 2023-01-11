@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+  <script src="https://unpkg.com/axios@1.0.0/dist/axios.min.js"></script>
+
+  <!--  <script src="../assert/js/axios.js"></script>-->
+  <script src="../assert/js/vue2.js"></script>
+  <link rel="stylesheet" href="../assert/element-ui/lib/theme-chalk/index.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="../assert/element-ui/lib/index.js"></script>
+</head>
+<style>
+  .demo-table-expand {
+    font-size: 0;
+  }
+  .demo-table-expand label {
+    width: 90px;
+    color: #99a9bf;
+  }
+  .demo-table-expand .el-form-item {
+    margin-right: 0;
+    margin-bottom: 0;
+    width: 50%;
+  }
+
+
+  .el-header, .el-footer {
+
+    text-align: center;
+    line-height: 6px;
+  }
+  .el-aside {
+    color: #333;
+    text-align: center;
+    line-height: 200px;
+  }
+
+  .el-main {
+
+
+    text-align: center;
+    line-height: 16px;
+  }
+
+  body > .el-container {
+    margin-bottom: 40px;
+  }
+
+  .el-container:nth-child(5) .el-aside,
+  .el-container:nth-child(6) .el-aside {
+    line-height: 260px;
+  }
+
+  .el-container:nth-child(7) .el-aside {
+    line-height: 320px;
+  }
+
+
+  .linetest{
+    white-space: pre-line;
+  }
+</style>
+<body>
+<div id="rootUser">
+<el-container>
+
+    <el-aside width="200px">
+          <el-menu
+                  default-active="2"
+                  class="el-menu-vertical-demo"
+                  text-color="#fff"
+                  active-text-color="#ffd04b">
+            <el-menu-item index="1">
+              <el-link type="info" href="rootUser.html" target="_self">
+                全部岗位</el-link>> </el-menu-item>
+            </el-submenu>
+            <el-menu-item index="2"><el-link type="info" href="manageWork.html" target="_self">管理岗位</el-link> </el-menu-item>
+            <el-menu-item index="3"><el-link type="info" href="manageUser.html" target="_self" >修改密码</el-link>></el-menu-item>
+            <el-menu-item>
+              <el-input
+                      placeholder="输入岗位名称"
+                      v-model="searchName">
+                <i slot="prefix" class="el-input__icon el-icon-search" @click="searchByName"></i>
+              </el-input>
+            </el-menu-item>
+            <el-menu-item>
+                <el-select v-model="requirementNeed" placeholder="学历">
+                  <el-option label="专科及以上" value="1"></el-option>
+                  <el-option label="本科及以上" value="2"></el-option>
+                  <el-option label="研究生及以上" value="3"></el-option>
+                </el-select>
+            </el-menu-item>
+            <el-menu-item v-if="log">
+              <el-button type="text" @click="logOut">退出登录</el-button>
+            </el-menu-item>
+            <el-menu-item v-if="nolog">
+              <el-link type="info" href="login.html" target="_self" >去登录</el-link>>
+            </el-menu-item>
+          </el-menu>
+
+
+
+    </el-aside>
+  <el-main>
+    <template>
+      <el-table
+              :data="tableData"
+              style="width: 100%;height:100%"
+              >
+        <el-table-column
+                fixed
+                prop="name"
+                label="岗位名称"
+                >
+        </el-table-column>
+        <el-table-column
+                prop="requirement"
+                label="学历要求"
+                >
+        </el-table-column>
+        <el-table-column
+                prop="salary"
+                label="薪资"
+                >
+        </el-table-column>
+        <el-table-column
+                label="更多信息"
+                >
+          <template slot-scope="scope">
+            <el-button @click="showDetail(scope.row)" type="text" size="small">查看</el-button>
+
+          </template>
+        </el-table-column>
+      </el-table>
+    </template>
+
+
+
+<!--      展示用户信息的表单-->
+    <el-dialog title="岗位详情" :visible.sync="dialogUpdateVisible">
+      <el-form :model="updateForm" >
+        <el-form-item label="岗位名称" :label-width="formLabelWidth" prop="name">
+          <el-input v-model="updateForm.name" autocomplete="off" disabled=""></el-input>
+        </el-form-item>
+
+        <el-form-item label="岗位描述"  prop="description">
+          <el-input type="textarea" v-model="updateForm.description" autocomplete="off" disabled></el-input>
+        </el-form-item>
+
+        <el-form-item label="岗位需求"  prop="requirement">
+          <el-input type="textarea" v-model="updateForm.requirement" autocomplete="off" disabled></el-input>
+        </el-form-item>
+
+        <el-form-item label="联系方式" :label-width="formLabelWidth" prop="contact">
+          <el-input v-model="updateForm.contact" autocomplete="off" disabled ></el-input>
+        </el-form-item>
+        <el-form-item label="地址" :label-width="formLabelWidth" prop="address">
+          <el-input v-model="updateForm.address" autocomplete="off" disabled></el-input>
+        </el-form-item>
+
+        <el-form-item label="最低薪资" :label-width="formLabelWidth" prop="minSalary">
+          <el-input v-model="updateForm.minSalary" autocomplete="off" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="最高薪资" :label-width="formLabelWidth" prop="maxSalary">
+          <el-input v-model="updateForm.maxSalary" autocomplete="off" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="是否可见" :label-width="formLabelWidth" prop="visuality">
+          <el-select v-model="updateForm.visuality" placeholder="可见性" disabled>
+            <el-option label="可见" value="1"></el-option>
+            <el-option label="不可见" value="0"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+
+          <el-button type="info" @click="shutDownDetail">我看完了</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </el-main>
+  </el-container>
+</el-container>
+
+</div>
+
+
+
+
+<script>
+  new Vue({
+    el: "#rootUser",
+    data() {
+      return {
+        tableData:[],
+        activeIndex: "1",
+        searchName:"",
+        dialogUpdateVisible: false,
+        updateForm:[],
+        requirementNeed:"",
+        formLabelWidth: "120px",
+        log:false,
+        nolog:true
+      }
+    },
+    methods: {
+      showDetail(row) {
+        this.dialogUpdateVisible = true;
+        var _this = this;
+        console.log(row.id);
+        axios.get("/work/custom/getById/"+row.id).then(function (resp){
+          _this.updateForm = resp.data.data;
+          _this.$message.info(resp.data.msg);
+        })
+      },
+      shutDownDetail(){
+        this.dialogUpdateVisible = false;
+      },
+      searchByName(){
+        var _this = this;
+        if (this.searchName=="") {
+          this.searchName = "NONEED"
+        }
+        if (this.requirementNeed=="") {
+          this.requirementNeed = "NONEED"
+        }
+        axios.get("/work/custom/searchByName?searchName=" + this.searchName + "&requirementNeed=" + this.requirementNeed).then(function (resp) {
+          _this.tableData = resp.data.data;
+        })
+      },
+      selectAll(){
+        var _this = this;
+        axios.get("/work/custom/all").then(function (resp){
+          _this.tableData = resp.data.data;
+          _this.checkUser()
+        })
+      },
+      checkUser(){
+        var _this = this;
+        axios.get("/user/custom/check").then(function (resp) {
+          if (resp.data.code===1) {
+            _this.log = true;
+            _this.nolog = false;
+          }else {
+            _this.nolog = true;
+            _this.log = false;
+          }
+        })
+      },
+      logOut(){
+        var _this = this ;
+        axios.delete("/user/logged/logOut").then(function (resp) {
+          _this.$message.info(resp.data.msg);
+          window.location.href="rootUser.html"
+        })
+      }
+
+
+    },
+    mounted(){
+      var _this = this;
+      this.selectAll();
+      this.checkUser()
+    }
+  })
+</script>
+</body>
+</html>

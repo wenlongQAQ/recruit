@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../assert/js/axios.js"></script>
+
+    <!--  <script src="../assert/js/axios.js"></script>-->
+    <script src="../assert/js/vue2.js"></script>
+    <link rel="stylesheet" href="../assert/element-ui/lib/theme-chalk/index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="../assert/element-ui/lib/index.js"></script>
+
+    <style>
+        .demo-table-expand {
+            font-size: 0;
+        }
+        .demo-table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+        .demo-table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 50%;
+        }
+
+
+        .el-header, .el-footer {
+
+            text-align: center;
+            line-height: 6px;
+        }
+        .el-aside {
+            color: #333;
+            text-align: center;
+            line-height: 200px;
+        }
+
+        .el-main {
+            text-align: center;
+            line-height: 16px;
+        }
+
+        body > .el-container {
+            margin-bottom: 40px;
+        }
+
+        .el-container:nth-child(5) .el-aside,
+        .el-container:nth-child(6) .el-aside {
+            line-height: 260px;
+        }
+
+        .el-container:nth-child(7) .el-aside {
+            line-height: 320px;
+        }
+
+
+        .linetest{
+            white-space: pre-line;
+        }
+    </style>
+<body>
+<div id="manageWork">
+    <el-container>
+
+        <el-container>
+            <el-aside width="200px">
+                <el-menu
+                        default-active="2"
+                        class="el-menu-vertical-demo"
+                        @open="handleOpen"
+                        @close="handleClose"
+                        text-color="#fff"
+                        active-text-color="#ffd04b">
+                    <el-menu-item index="1">
+                        <el-link type="info" href="rootUser.html" target="_self">
+                            全部岗位</el-link>> </el-menu-item>
+                    </el-submenu>
+                    <el-menu-item index="2"><el-link type="info" href="manageWork.html" target="_self">管理岗位</el-link> </el-menu-item>
+                    <el-menu-item index="3"><el-link type="info" href="manageUser.html" target="_self" >修改密码</el-link></el-menu-item>
+
+                    <el-menu-item>
+                        <el-button type="text" @click="openAddForm">添加岗位</el-button>
+                    </el-menu-item>
+
+                    <el-menu-item>
+                        <el-input
+                                placeholder="输入岗位名称"
+                                v-model="searchName">
+                            <i slot="prefix" class="el-input__icon el-icon-search" @click="searchByName"></i>
+                        </el-input>
+                    </el-menu-item>
+                    <el-menu-item>
+                        <el-select v-model="requirementNeed" placeholder="学历">
+                            <el-option label="专科及以上" value="1"></el-option>
+                            <el-option label="本科及以上" value="2"></el-option>
+                            <el-option label="研究生及以上" value="3"></el-option>
+                        </el-select>
+                    </el-menu-item>
+
+
+                    <el-menu-item>
+                        <el-button type="text" @click="logOut">退出登录</el-button>
+                    </el-menu-item>
+
+                </el-menu>
+
+            </el-aside>
+
+        <el-main>
+<!--            展示用户信息的表格-->
+            <template>
+                <el-table
+                        :data="tableData"
+                        height="660px"
+                        border
+                        style="width: 100%">
+                    <el-table-column
+                            prop="name"
+                            label="岗位名称"
+                            width="180">
+                    </el-table-column>
+
+                    <el-table-column
+                            prop="address"
+                            label="地址">
+                    </el-table-column>
+                    <el-table-column
+                            prop="requirement"
+                            label="学历要求">
+                    </el-table-column>
+                    <el-table-column
+                            prop="minSalary"
+                            label="最低薪资（千/月）">
+                    </el-table-column>
+                    <el-table-column
+                            prop="maxSalary"
+                            label="最高薪资（千/月）">
+                    </el-table-column>
+                    <el-table-column
+                            label="是否可见"
+                            width="180"
+                    >
+                        <template slot-scope="scope">
+                            {{ String(scope.row.visuality) === "1" ? '可见' : '不可见' }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作">
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    @click="handleEdit(scope.row.id)">编辑</el-button>
+                            <el-button
+                                    size="mini"
+                                    type="danger"
+                                    @click="handlerDelete(scope.row.id)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </template>
+<!--添加岗位的表单-->
+            <el-dialog title="新增岗位" :visible.sync="dialogAddVisible">
+                <el-form :model="addForm" :rules="rules" ref="updateForm">
+                    <el-form-item label="岗位名称" :label-width="formLabelWidth" prop="name">
+                        <el-input v-model="addForm.name" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="岗位描述" :label-width="formLabelWidth" prop="description">
+                        <el-input type="textarea" v-model="addForm.description" autocomplete="off"></el-input>
+                    </el-form-item>
+
+                    <el-form-item label="岗位需求" :label-width="formLabelWidth" prop="requirement">
+                        <el-select v-model="addForm.requirement" placeholder="学历">
+                            <el-option label="专科及以上" value="1"></el-option>
+                            <el-option label="本科及以上" value="2"></el-option>
+                            <el-option label="研究生及以上" value="3"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="联系方式" :label-width="formLabelWidth" prop="contact">
+                        <el-input v-model="addForm.contact" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="地址" :label-width="formLabelWidth" prop="address">
+                        <el-input v-model="addForm.address" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="最低薪资" :label-width="formLabelWidth" prop="minSalary">
+                        <el-input v-model="addForm.minSalary" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="最高薪资" :label-width="formLabelWidth" prop="maxSalary">
+                        <el-input v-model="addForm.maxSalary" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="是否可见" :label-width="formLabelWidth" prop="visuality">
+                        <el-select v-model="addForm.visuality" placeholder="可见性">
+                            <el-option label="可见" value="1"></el-option>
+                            <el-option label="不可见" value="0"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="addWorkData('updateForm')">提交</el-button>
+                        <el-button type="info" @click="addCancel">取 消</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-dialog>
+
+<!--修改岗位信息的表单-->
+            <el-dialog title="岗位修改" :visible.sync="dialogUpdateVisible">
+                <el-form :model="updateForm" :rules="rules" ref="updateForm">
+                    <el-form-item label="岗位名称" :label-width="formLabelWidth" prop="name">
+                        <el-input v-model="updateForm.name" autocomplete="off"></el-input>
+                    </el-form-item>
+
+                    <el-form-item label="岗位描述"  prop="description">
+                        <el-input type="textarea" v-model="updateForm.description" autocomplete="off"></el-input>
+                    </el-form-item>
+
+                    <el-form-item label="岗位需求" :label-width="formLabelWidth" prop="requirement">
+                        <el-select v-model="updateForm.requirement" placeholder="学历">
+                            <el-option label="专科及以上" value="1"></el-option>
+                            <el-option label="本科及以上" value="2"></el-option>
+                            <el-option label="研究生及以上" value="3"></el-option>
+                        </el-select>
+                    </el-form-item>
+
+
+                    <el-form-item label="联系方式" :label-width="formLabelWidth" prop="contact">
+                        <el-input v-model="updateForm.contact" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="地址" :label-width="formLabelWidth" prop="address">
+                        <el-input v-model="updateForm.address" autocomplete="off"></el-input>
+                    </el-form-item>
+
+                    <el-form-item label="最低薪资" :label-width="formLabelWidth" prop="minSalary">
+                        <el-input v-model="updateForm.minSalary" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="最高薪资" :label-width="formLabelWidth" prop="maxSalary">
+                        <el-input v-model="updateForm.maxSalary" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="是否可见" :label-width="formLabelWidth" prop="visuality">
+                        <el-select v-model="updateForm.visuality" placeholder="可见性">
+                            <el-option label="可见" value="1"></el-option>
+                            <el-option label="不可见" value="0"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="updateWorkData('updateForm')">提交</el-button>
+                        <el-button type="info" @click="updateCancel">取 消</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-dialog>
+        </el-main>
+        </el-container>
+    </el-container>
+
+</div>
+<script>
+    new Vue({
+        el: "#manageWork",
+        data() {
+            var checkTelephone = (rule, value, cb) => {
+
+            // 验证手机号的正则表达式
+            const regMobile = /^(0|86|17951)?(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$/;
+            if (regMobile.test(value)) {
+                cb();
+            }
+            cb(new Error("请输入合法的手机号"));
+
+        };
+            var checkSalary = (rule, value, cb) => {
+
+
+            if (parseFloat(this.minSalary)<parseFloat(this.maxSalary)) {
+                cb();
+            }
+            cb(new Error("最低工资不能大于最高薪资"));
+
+        };
+            return {
+                tableData:[],
+                activeIndex: "2",
+                searchName:"",
+                dialogUpdateVisible: false,
+                dialogAddVisible:false,
+                requirementNeed:"",
+                updateForm:{
+                    name:'',
+                    description:'',
+                    requirement:'',
+                    contact:'',
+                    address:'',
+                    visuality:'',
+                    minSalary: '',
+                    maxSalary:'',
+                    id:'',
+                },
+
+                addForm:{
+                    name:'',
+                    description:'',
+                    requirement:'',
+                    contact:'',
+                    address:'',
+                    visuality:'',
+                    minSalary: '',
+                    maxSalary:'',
+                    id:'',
+                },
+
+                formLabelWidth: '120px',
+                rules:{
+                    name:[{
+                        required:true,message:'名称不能为空',trigger:'blur'
+                    }],
+                    description:[{
+                        required:true,message:'描述不能为空',trigger:'blur'
+                    }],
+                    requirement:[{
+                        required:true,message:'要求不能为空',trigger:'blur'
+                    }],
+                    contact:[{
+                        validator: checkTelephone,required: true, message: '请输入合法的手机号',trigger: 'blur'
+                    }],
+                    address:[{
+                        required:true,message:'地址不能为空',trigger:'blur'
+                    }],
+                    visuality:[{
+                        required:true,message:'必须选择',trigger:'blur'
+                    }],
+                    minSalary: [{
+                        required:true,message:'必须输入',trigger:'blur'
+                    }],
+                    maxSalary:[{
+                        required:true,message:'必须输入',trigger:'blur'
+                    }],
+                },
+            }
+        },
+        methods: {
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            searchByName(){
+                var _this = this;
+                if (this.searchName=="") {
+                    this.searchName = "NONEED"
+                }
+                if (this.requirementNeed=="") {
+                    this.requirementNeed = "NONEED"
+                }
+                axios.get("/work/enroll/searchByName?searchName=" + this.searchName+"&requirementNeed="+this.requirementNeed).then(function (resp) {
+                    _this.tableData = resp.data.data;
+                })
+            },
+            selectAll(){
+                var _this = this;
+                axios.get("/work/enroll/all").then(function (resp){
+                    _this.tableData = resp.data.data;
+                })
+            },
+
+            handleEdit(id){
+                this.dialogUpdateVisible = true;
+                var _this = this;
+                console.log(id);
+                axios.get("/work/custom/getById/"+id).then(function (resp){
+                    _this.updateForm = resp.data.data;
+                    _this.$message.info(resp.data.msg);
+                })
+
+            },
+            handlerDelete(id){
+                var _this = this;
+                axios.delete("/work/enroll/deleteById/"+id).then(function (resp){
+                    _this.$message.info(resp.data.msg);
+                    _this.selectAll();
+                })
+            },
+            updateWorkData(formName){
+                this.$refs[formName].validate((valid) => {
+                    console.log(valid);
+                    if (valid===true) {
+                        var _this = this;
+                        axios.put("/work/enroll/updateWork",this.updateForm).then(function (resp) {
+                            if(resp.data.code===1){
+                                _this.$message.success(resp.data.msg);
+                                _this.selectAll();
+                            }
+                            else
+                                _this.$message.error(resp.data.msg);
+                        })
+                        for(let i in this.form){
+                            this.form[i] = "";
+                        }
+                        this.dialogUpdateVisible=false;
+                    } else {
+                        this.$message.error("不合法的数据！");
+                        return false;
+                    }
+                });
+            },
+            updateCancel(){
+              this.dialogUpdateVisible = false;
+            },
+            openAddForm(){
+                this.dialogAddVisible=true;
+            },
+            addWorkData(formName){
+                this.$refs[formName].validate((valid) => {
+                    console.log(valid);
+                    if (valid===true) {
+                        var _this = this;
+                        axios.post("/work/enroll/addWork",this.addForm).then(function (resp) {
+                            if(resp.data.code===1){
+                                _this.$message.success(resp.data.msg);
+                                _this.selectAll();
+                            }
+                            else
+                                _this.$message.error(resp.data.msg);
+                        })
+                        for(let i in this.form){
+                            this.form[i] = "";
+                        }
+                        this.dialogAddVisible=false;
+                    } else {
+                        this.$message.error("不合法的数据！");
+                        return false;
+                    }
+                });
+            },
+            addCancel(){
+                this.dialogAddVisible=false;
+            },
+            logOut(){
+                var _this = this ;
+                axios.delete("/user/logged/logOut").then(function (resp) {
+                    _this.$message.info(resp.data.msg);
+                    window.location.href="rootUser.html"
+                })
+            }
+        },
+        mounted(){
+            var _this = this;
+            this.selectAll();
+        }
+
+    })
+</script>
+</body>
+</html>
